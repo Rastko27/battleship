@@ -17,7 +17,7 @@ export class Ship {
    }
 }
 
-export function Gameboard () {
+function Gameboard () {
    // Initialize 10x10 gameboard
    let gameboardSpaces = [];
    for (let i = 0; i < 10; i++) {
@@ -56,6 +56,8 @@ export function Gameboard () {
          return `Ship hit! Ship health: ${shipHit.size - shipHit.hits}`;
       } else if (gameboardSpaces[x][y] === "ship already hit") {
          return "Ship already hit there!";
+      } else if (gameboardSpaces[x][y] === "miss") {
+         return "That shot already missed!";
       } else {
          gameboardSpaces[x][y] = "miss";
          return "Missed!";

@@ -1,4 +1,4 @@
-import { Ship, Gameboard, Player } from "./battleship.js";
+import { Ship, Player } from "./battleship.js";
 
 const userInterface = (function () {
    // Declare player variables
@@ -7,6 +7,9 @@ const userInterface = (function () {
    // Get gameLog
    const gameLog = document.getElementById("game-log");
 
+   // Declare player turn
+   let playerTurn;
+
    function renderGameboards() {
       const gameboardOne = document.getElementById("gameboard-one");
       const gameboardTwo = document.getElementById("gameboard-two");
@@ -14,13 +17,13 @@ const userInterface = (function () {
       gameboardOne.innerHTML = ""; // Clear existing content
       gameboardTwo.innerHTML = ""; // Clear existing content
 
-      createBoard(gameboardOne, player1.playerGameboard, player1);
-      createBoard(gameboardTwo, player2.playerGameboard, player2);
+      createBoard(gameboardOne, player1);
+      createBoard(gameboardTwo, player2);
    }
 
    // Split rendering and creating the board to not duplicate event listeners
 
-   function createBoard(container, gameboard) {
+   function createBoard(container, player) {
       for (let i = 0; i < 10; i++) {
          let row = document.createElement("div");
          row.classList.add("gameboard-row");
@@ -28,13 +31,16 @@ const userInterface = (function () {
          for (let j = 0; j < 10; j++) {
             let space = document.createElement("div");
 
-            if (gameboard.gameboardSpaces[i][j] === null) {
+            // Store space in variable for easier readability
+            let spaceStatus = player.playerGameboard.gameboardSpaces[i][j];
+
+            if (spaceStatus === null) {
                space.innerHTML = "";
                space.classList.remove("ship-space");
-            } else if (gameboard.gameboardSpaces[i][j] === "miss") {
+            } else if (spaceStatus === "miss") {
                space.innerHTML = "*";
                space.classList.remove("ship-space");
-            } else if (gameboard.gameboardSpaces[i][j] === "ship already hit") {
+            } else if (spaceStatus === "ship already hit") {
                space.innerHTML = "X";
                space.classList.remove("ship-space");
             } else {
@@ -44,8 +50,17 @@ const userInterface = (function () {
 
             // Event listener
             space.addEventListener("click", () => {
-               gameLog.textContent = gameboard.receiveAttack([i, j]);
-               renderGameboards();
+               if (playerTurn === player) {
+                  if (spaceStatus !== "miss" && spaceStatus !== "ship already hit") {
+                     gameLog.textContent = player.playerGameboard.receiveAttack([i, j]);
+                     renderGameboards();
+                     playerTurn = (playerTurn === player1) ? player2 : player1;
+                  } else {
+                     gameLog.textContent = "This space has already been attacked!";
+                  }
+               } else {
+                  gameLog.textContent = "Not your turn right now!";
+               }
             });
 
             row.appendChild(space);
@@ -59,6 +74,7 @@ const userInterface = (function () {
    function startGame(p1, p2) {
       player1 = p1;
       player2 = p2;
+      playerTurn = player2;
       renderGameboards();
    }
 
