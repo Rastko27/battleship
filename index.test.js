@@ -1,5 +1,5 @@
-import { Ship } from "./index.js";
-import { Gameboard } from "./index.js";
+import { Ship } from "./battleship.js";
+import { Gameboard } from "./battleship.js";
 
 describe("Ship isSunk tests", () => {
    test("ship is sunk after one hit : false", () => {
@@ -32,7 +32,7 @@ describe("Gameboard ship placement tests", () => {
       expect(gameboard.gameboardSpaces[2][4]).toEqual(ship);
    });
 
-   test("ship placement throw error", () => {
+   test("ship placement throw error on too many coordinates", () => {
       const ship = new Ship(3);
       expect(() => {
          gameboard.placeShip(ship, [2, 4], [2, 5], [2, 6], [2, 7]);

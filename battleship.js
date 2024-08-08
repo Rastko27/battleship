@@ -27,7 +27,7 @@ export function Gameboard () {
       }
    }
 
-   //
+   let ships = [];
 
    // Place ship at coordinate
    function placeShip(ship, ...coordinates) {
@@ -40,21 +40,38 @@ export function Gameboard () {
          let y = coordinates[i][1];
          gameboardSpaces[x][y] = ship;
       }
+
+      // Track ships
+      ships.push(ship);
    }
 
    // Recieve attack function
    function receiveAttack(coordinates) {
       let x = coordinates[0];
       let y = coordinates[1];
-      if (gameboardSpaces[x][y] !== null) {
+      if (gameboardSpaces[x][y] instanceof Ship) {
          let shipHit = gameboardSpaces[x][y];
          shipHit.hit();
+         gameboardSpaces[x][y] = "ship already hit";
          return `Ship hit! Ship health: ${shipHit.size - shipHit.hits}`;
+      } else if (gameboardSpaces[x][y] === "ship already hit") {
+         return "Ship already hit there!";
       } else {
          gameboardSpaces[x][y] = "miss";
          return "Missed!";
       }
    }
 
-   return { gameboardSpaces, placeShip, receiveAttack };
+   function areAllShipsSunk() {
+      return ships.every(ship => ship.isSunk());
+   }
+
+   return { gameboardSpaces, placeShip, receiveAttack, areAllShipsSunk };
 };
+
+export class Player {
+   constructor(name) {
+      this.name = name;
+      this.playerGameboard = Gameboard();
+   }
+}
