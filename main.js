@@ -48,26 +48,60 @@ const userInterface = (function () {
                space.classList.add("ship-space");
             }
 
-            // Event listener
-            space.addEventListener("click", () => {
-               if (playerTurn === player) {
-                  if (spaceStatus !== "miss" && spaceStatus !== "ship already hit") {
-                     gameLog.textContent = player.playerGameboard.receiveAttack([i, j]);
-                     renderGameboards();
-                     playerTurn = (playerTurn === player1) ? player2 : player1;
+            // Add event listener only for computer's gameboard
+            if (player === player2) {
+               // Event listener
+               space.addEventListener("click", () => {
+                  if (playerTurn === player2) {
+                     if (spaceStatus !== "miss" && spaceStatus !== "ship already hit") {
+                        gameLog.textContent = player2.playerGameboard.receiveAttack([i, j]);
+                        renderGameboards();
+                        playerTurn = player1;
+                        // Computer's turn
+                        setTimeout(() => {
+                           handleComputerMove();
+                           renderGameboards();
+                           playerTurn = player2;
+                        }, 3000);
+                     } else {
+                        gameLog.textContent = "This space has already been attacked!";
+                     }
                   } else {
-                     gameLog.textContent = "This space has already been attacked!";
+                     gameLog.textContent = "Not your turn right now!";
                   }
-               } else {
-                  gameLog.textContent = "Not your turn right now!";
-               }
-            });
+               });
+            }
 
             row.appendChild(space);
          }
 
          container.appendChild(row);
       }
+   }
+
+   // Function to handle how computer plays
+   function handleComputerMove() {
+      // First computer choice
+      let [x, y] = getComputerChoice();
+
+      // Get choice until move is valid
+      while(!isValidMove([x,y])) {
+         [x, y] = getComputerChoice();
+      }
+
+      gameLog.textContent = player1.playerGameboard.receiveAttack([x, y]);
+   }
+
+   // Check if move is valid
+   function isValidMove([x, y]) {
+      return player1.playerGameboard.gameboardSpaces[x][y] === null;
+   }
+
+   // Get computer choice
+   function getComputerChoice() {
+      let x = Math.floor(Math.random() * 10);
+      let y = Math.floor(Math.random() * 10);
+      return [x,y];
    }
 
    // Set player objects to player1 and player2 variables then initial render gameboard
