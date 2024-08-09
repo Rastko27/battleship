@@ -17,7 +17,7 @@ export class Ship {
    }
 }
 
-function Gameboard () {
+function Gameboard() {
    // Initialize 10x10 gameboard
    let gameboardSpaces = [];
    for (let i = 0; i < 10; i++) {
@@ -27,6 +27,7 @@ function Gameboard () {
       }
    }
 
+   // Ships tracking
    let ships = [];
 
    // Place ship at coordinate
@@ -41,7 +42,7 @@ function Gameboard () {
          gameboardSpaces[x][y] = ship;
       }
 
-      // Track ships
+      // Add ship
       ships.push(ship);
    }
 
@@ -64,12 +65,8 @@ function Gameboard () {
       }
    }
 
-   function areAllShipsSunk() {
-      return ships.every(ship => ship.isSunk());
-   }
-
-   return { gameboardSpaces, placeShip, receiveAttack, areAllShipsSunk };
-};
+   return { gameboardSpaces, placeShip, receiveAttack, ships };
+}
 
 export class Player {
    constructor(name) {

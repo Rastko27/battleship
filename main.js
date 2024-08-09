@@ -10,6 +10,9 @@ const userInterface = (function () {
    // Declare player turn
    let playerTurn;
 
+   // Flag to check if the game is over
+   let gameOver = false;
+
    function renderGameboards() {
       const gameboardOne = document.getElementById("gameboard-one");
       const gameboardTwo = document.getElementById("gameboard-two");
@@ -45,24 +48,39 @@ const userInterface = (function () {
                space.classList.remove("ship-space");
             } else {
                space.innerHTML = "";
-               space.classList.add("ship-space");
+               // Hide computer ships from player 1
+               // if (player !== player2) {
+                  space.classList.add("ship-space");
+               // }
             }
 
             // Add event listener only for computer's gameboard
             if (player === player2) {
                // Event listener
                space.addEventListener("click", () => {
+                  if (gameOver) {
+                     gameLog.textContent = "";
+                     gameLog.textContent = "Game over. Please refresh to play again!";
+                     return;
+                  }
                   if (playerTurn === player2) {
                      if (spaceStatus !== "miss" && spaceStatus !== "ship already hit") {
                         gameLog.textContent = player2.playerGameboard.receiveAttack([i, j]);
                         renderGameboards();
+                        checkGameEnd(player2);
                         playerTurn = player1;
-                        // Computer's turn
-                        setTimeout(() => {
-                           handleComputerMove();
-                           renderGameboards();
-                           playerTurn = player2;
-                        }, 3000);
+                        // Check if game is over before getting computer's turn
+                        if (gameOver) {
+                           return;
+                        } else {
+                           // Computer's turn
+                           setTimeout(() => {
+                              handleComputerMove();
+                              renderGameboards();
+                              checkGameEnd(player1);
+                              playerTurn = player2;
+                           }, 300);
+                        }
                      } else {
                         gameLog.textContent = "This space has already been attacked!";
                      }
@@ -77,6 +95,18 @@ const userInterface = (function () {
 
          container.appendChild(row);
       }
+   }
+
+   // Check if all ships are sunk
+   function checkGameEnd(player) {
+      for (let ship of player.playerGameboard.ships) {
+         if (!ship.isSunk()) {
+            return;
+         }
+      }
+      
+      gameOver = true;
+      gameLog.textContent = `${player.name} has lost! `;
    }
 
    // Function to handle how computer plays
