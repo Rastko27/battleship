@@ -37,8 +37,7 @@ function Gameboard() {
       }
 
       for (let i = 0; i < ship.size; i++) {
-         let x = coordinates[i][0];
-         let y = coordinates[i][1];
+         let [x, y] = coordinates[i];
          gameboardSpaces[x][y] = ship;
       }
 
@@ -47,9 +46,7 @@ function Gameboard() {
    }
 
    // Recieve attack function
-   function receiveAttack(coordinates) {
-      let x = coordinates[0];
-      let y = coordinates[1];
+   function receiveAttack([x, y]) {
       if (gameboardSpaces[x][y] instanceof Ship) {
          let shipHit = gameboardSpaces[x][y];
          shipHit.hit();
@@ -65,7 +62,106 @@ function Gameboard() {
       }
    }
 
-   return { gameboardSpaces, placeShip, receiveAttack, ships };
+   // Generate random coordinates for ship placement
+   function getRandomCoordinates(size, horizontal = true) {
+      const x = Math.floor(Math.random() * 10);
+      const y = Math.floor(Math.random() * 10);
+
+      let coordinates = [];
+      for (let i = 0; i < size; i++) {
+         if (horizontal) {
+            if (y + i < 10) {
+               coordinates.push([x, y + i]);
+            } else {
+               return getRandomCoordinates(size, horizontal); // Retry if out of bounds
+            }
+         } else {
+            if (x + i < 10) {
+               coordinates.push([x + i, y]);
+            } else {
+               return getRandomCoordinates(size, horizontal); // Retry if out of bounds
+            }
+         }
+      }
+      return coordinates;
+   }
+
+   // Randomize ship placement on the gameboard
+   function randomizeShipPlacement() {
+      const ships = [
+         new Ship(5),
+         new Ship(4),
+         new Ship(3),
+         new Ship(3),
+         new Ship(2),
+      ];
+
+      ships.forEach((ship) => {
+         let coordinates;
+         let horizontal = Math.random() > 0.5; // Randomly choose orientation
+
+         do {
+            coordinates = getRandomCoordinates(ship.size, horizontal);
+         } while (!canPlaceShip(coordinates));
+
+         placeShip(ship, ...coordinates);
+      });
+   }
+
+   // Check if a ship can be placed at the given coordinates
+   function canPlaceShip(coordinates) {
+      // Check if all coordinates are within bounds and not already occupied
+      for (const [x, y] of coordinates) {
+         if (
+            x < 0 ||
+            x >= 10 ||
+            y < 0 ||
+            y >= 10 ||
+            gameboardSpaces[x][y] !== null
+         ) {
+            return false;
+         }
+      }
+
+      // Check the surrounding area
+      const directions = [
+         [-1, -1],
+         [-1, 0],
+         [-1, 1],
+         [0, -1],
+         [0, 1],
+         [1, -1],
+         [1, 0],
+         [1, 1],
+      ];
+
+      for (const [x, y] of coordinates) {
+         for (const [dx, dy] of directions) {
+            const nx = x + dx;
+            const ny = y + dy;
+
+            if (
+               nx >= 0 &&
+               nx < 10 &&
+               ny >= 0 &&
+               ny < 10 &&
+               gameboardSpaces[nx][ny] instanceof Ship
+            ) {
+               return false;
+            }
+         }
+      }
+
+      return true;
+   }
+
+   return {
+      gameboardSpaces,
+      placeShip,
+      receiveAttack,
+      randomizeShipPlacement,
+      ships,
+   };
 }
 
 export class Player {
