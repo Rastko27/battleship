@@ -4,6 +4,7 @@ body {
 }
 
 .page-wrapper {
+   position: relative;
    width: 100vw;
    height: 100vh;
    display: flex;
@@ -90,4 +91,24 @@ h2 {
    border: 3px solid black;
    background-color: transparent;
    cursor: pointer;
+}
+
+.overlay {
+   position: absolute;
+   z-index: 10;
+   background-color: white;
+   width: 100vw;
+   height: 100vh;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+}
+
+.overlay > p {
+   font-size: 32px;
+}
+
+.hide {
+   display: none;
 }

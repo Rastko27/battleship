@@ -8,6 +8,8 @@ const userInterface = (function () {
    let playerTurn;
    let gameOver = false;
 
+   let typeOfGame;
+
    function renderGameboards() {
       const gameboardOne = document.getElementById("gameboard-one");
       const gameboardTwo = document.getElementById("gameboard-two");
@@ -15,11 +17,17 @@ const userInterface = (function () {
       gameboardOne.innerHTML = "";
       gameboardTwo.innerHTML = "";
 
-      createBoard(gameboardOne, player1);
-      createBoard(gameboardTwo, player2);
+      // Render the board for the player whose turn it is
+      if (typeOfGame == "twoPlayerGame") {
+         createBoard(gameboardOne, player1, playerTurn === player1);
+         createBoard(gameboardTwo, player2, playerTurn === player2);
+      } else if (typeOfGame === "computerGame") {
+         createBoard(gameboardOne, player1, true);
+         createBoard(gameboardTwo, player2, false);
+      }
    }
 
-   function createBoard(container, player) {
+   function createBoard(container, player, showShips) {
       for (let i = 0; i < 10; i++) {
          let row = document.createElement("div");
          row.classList.add("gameboard-row");
@@ -39,39 +47,47 @@ const userInterface = (function () {
                space.classList.remove("ship-space");
             } else {
                space.innerHTML = "";
-               space.classList.add("ship-space");
+               if (showShips) {
+                  space.classList.add("ship-space");
+               } else {
+                  space.classList.remove("ship-space");
+               }
             }
 
-            if (player === player2) {
-               space.addEventListener("click", () => {
-                  if (gameOver) {
-                     gameLog.textContent = "Game over. Please refresh to play again!";
-                     return;
-                  }
-                  if (playerTurn === player2) {
-                     if (spaceStatus !== "miss" && spaceStatus !== "ship already hit") {
-                        gameLog.textContent = player2.playerGameboard.receiveAttack([i, j]);
+            space.addEventListener("click", () => {
+               // Check if game is over
+               if (gameOver) {
+                  gameLog.textContent =
+                     "Game over. Please refresh to play again!";
+                  return;
+               }
+
+               // Check for type of game and if player gameboard is of the computer
+               if (typeOfGame === "computerGame" && player === player2) {
+                  handlePlayerMove(player2, i, j);
+                  // Handle computer move if game isn't over
+                  if (!gameOver) {
+                     setTimeout(() => {
+                        handleComputerMove();
                         renderGameboards();
-                        checkGameEnd(player2);
-                        playerTurn = player1;
-                        if (gameOver) {
-                           return;
-                        } else {
-                           setTimeout(() => {
-                              handleComputerMove();
-                              renderGameboards();
-                              checkGameEnd(player1);
-                              playerTurn = player2;
-                           }, 300);
-                        }
-                     } else {
-                        gameLog.textContent = "This space has already been attacked!";
-                     }
-                  } else {
-                     gameLog.textContent = "Not your turn right now!";
+                        checkGameEnd(player1);
+                     }, 300);
                   }
-               });
-            }
+               } else if (typeOfGame === "twoPlayerGame") {
+                  if (playerTurn === player1 && player === player2) {
+                     handlePlayerMove(player, i, j);
+                     playerTurn = player2;
+                     showOverlay();
+                  } else if (playerTurn === player2 && player === player1) {
+                     handlePlayerMove(player, i, j);
+                     playerTurn = player1;
+                     showOverlay();
+                  } else {
+                     gameLog.textContent =
+                        "You can only attack the opponent's board!";
+                  }
+               }
+            });
 
             row.appendChild(space);
          }
@@ -80,15 +96,63 @@ const userInterface = (function () {
       }
    }
 
+   // Function to handle player move to reduce reduntant code
+   function handlePlayerMove(opponent, x, y) {
+      let spaceStatus = opponent.playerGameboard.gameboardSpaces[x][y];
+      if (spaceStatus === "miss" && spaceStatus === "ship already hit") {
+         gameLog.textContent = "This space has already been attacked!";
+         return;
+      }
+
+      gameLog.textContent = opponent.playerGameboard.receiveAttack([x, y]);
+      renderGameboards();
+      checkGameEnd(opponent);
+   }
+
+   // Two player logic
+
+   const twoPlayerButton = document.getElementById("two-player");
+   const overlay = document.getElementById("overlay");
+   const continueButton = document.getElementById("continue");
+
+   // Show overlay
+   function showOverlay() {
+      overlay.classList.remove("hide");
+   }
+
+   // Hide overlay
+   function hideOverlay() {
+      overlay.classList.add("hide");
+   }
+
+   // Two player start game
+   function startTwoPlayerGame(p1, p2) {
+      player1 = p1;
+      player2 = p2;
+      player1.playerGameboard.randomizeShipPlacement();
+      player2.playerGameboard.randomizeShipPlacement();
+      playerTurn = player1;
+      gameOver = false;
+      typeOfGame = "twoPlayerGame";
+      renderGameboards();
+      hideOverlay();
+   }
+
+   // Add event listener to buttons
+   twoPlayerButton.addEventListener("click", () => {
+      startTwoPlayerGame(player1, player2);
+      newGame.style.display = "none";
+      twoPlayerButton.style.display = "none";
+   });
+   continueButton.addEventListener("click", () => {
+      hideOverlay();
+      renderGameboards();
+   });
+
    function checkGameEnd(player) {
       if (player.playerGameboard.ships.every((ship) => ship.isSunk())) {
          gameOver = true;
          gameLog.textContent = `${player.name} has lost!`;
-         // Remove the "New Game" button
-         const newGameButton = document.getElementById("randomize");
-         if (newGameButton) {
-            newGameButton.remove();
-         }
       }
    }
 
@@ -103,7 +167,10 @@ const userInterface = (function () {
    }
 
    function isValidMove([x, y]) {
-      return player1.playerGameboard.gameboardSpaces[x][y] === null;
+      return (
+         player1.playerGameboard.gameboardSpaces[x][y] === null ||
+         player1.playerGameboard.gameboardSpaces[x][y] instanceof Ship
+      );
    }
 
    function getComputerChoice() {
@@ -112,22 +179,23 @@ const userInterface = (function () {
       return [x, y];
    }
 
-   function startGame(p1, p2) {
+   function startComputerGame(p1, p2) {
       player1 = p1;
       player2 = p2;
       player1.playerGameboard.randomizeShipPlacement();
       player2.playerGameboard.randomizeShipPlacement();
-      playerTurn = player2;
+      playerTurn = player1;
       gameOver = false;
+      typeOfGame = "computerGame";
       renderGameboards();
    }
 
    const newGame = document.getElementById("randomize");
    newGame.addEventListener("click", () => {
-      startGame(player1, player2);
-      // Optionally, you might want to hide the button after starting the game
-      newGame.style.display = 'none';
+      startComputerGame(player1, player2);
+      newGame.style.display = "none";
+      twoPlayerButton.style.display = "none";
    });
 
-   return { startGame };
+   return {};
 })();
