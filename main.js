@@ -156,14 +156,68 @@ const userInterface = (function () {
       }
    }
 
+   const adjacentOffsets = [
+      [1, 0], // right
+      [-1, 0], // left
+      [0, 1], // down
+      [0, -1], // up
+   ];
+
+   let computerPreviousHits = [];
+   let visitedSpaces = new Set(); // Track visited spaces to avoid reattacking
+
    function handleComputerMove() {
-      let [x, y] = getComputerChoice();
+      let [x, y] = getSmartComputerChoice();
 
       while (!isValidMove([x, y])) {
-         [x, y] = getComputerChoice();
+         [x, y] = getSmartComputerChoice();
       }
 
-      gameLog.textContent = player1.playerGameboard.receiveAttack([x, y]);
+      const result = player1.playerGameboard.receiveAttack([x, y]);
+      gameLog.textContent = result;
+
+      if (result.includes("hit")) {
+         computerPreviousHits.push([x, y]);
+      } else {
+         computerPreviousHits = []; // Clear previous hits on a miss
+      }
+
+      visitedSpaces.add(`${x},${y}`);
+   }
+
+   function getSmartComputerChoice() {
+      if (computerPreviousHits.length === 0) {
+         return getRandomChoice();
+      }
+
+      const lastHit = computerPreviousHits[computerPreviousHits.length - 1];
+      const [lastX, lastY] = lastHit;
+
+      for (const [dx, dy] of adjacentOffsets) {
+         const [newX, newY] = [lastX + dx, lastY + dy];
+         if (
+            isWithinBounds(newX, newY) &&
+            isValidMove([newX, newY]) &&
+            !visitedSpaces.has(`${newX},${newY}`)
+         ) {
+            return [newX, newY];
+         }
+      }
+
+      return getRandomChoice();
+   }
+
+   function getRandomChoice() {
+      let x, y;
+      do {
+         x = Math.floor(Math.random() * 10);
+         y = Math.floor(Math.random() * 10);
+      } while (!isValidMove([x, y]) || visitedSpaces.has(`${x},${y}`));
+      return [x, y];
+   }
+
+   function isWithinBounds(x, y) {
+      return x >= 0 && x < 10 && y >= 0 && y < 10;
    }
 
    function isValidMove([x, y]) {
@@ -171,12 +225,6 @@ const userInterface = (function () {
          player1.playerGameboard.gameboardSpaces[x][y] === null ||
          player1.playerGameboard.gameboardSpaces[x][y] instanceof Ship
       );
-   }
-
-   function getComputerChoice() {
-      let x = Math.floor(Math.random() * 10);
-      let y = Math.floor(Math.random() * 10);
-      return [x, y];
    }
 
    function startComputerGame(p1, p2) {
